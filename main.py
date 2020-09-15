@@ -1,5 +1,6 @@
 import csv
 import json
+import xml.etree.ElementTree as ET
 import logging
 from decimal import *
 from datetime import datetime
@@ -133,12 +134,16 @@ def import_transactions(people, f_name):
     print("Imported {0} of {1} rows".format(imported_rows, total_rows))
 
 
-def get_date_from_str(str_date):
-    for kdf in KNOWN_DATE_FORMATS:
-        try:
-            return datetime.strptime(str_date, kdf)
-        except:
-            continue
+def get_date_from_str(str_date: str):
+    if str_date.isdigit():
+        return datetime.fromordinal(datetime(1900, 1, 1).toordinal() + int(str_date) - 2)
+    else:
+        for kdf in KNOWN_DATE_FORMATS:
+            try:
+                return datetime.strptime(str_date, kdf)
+            except:
+                continue
+
 
 def read_csv_data(f_name):
     try:
@@ -171,7 +176,17 @@ def read_json_data(f_name):
 
 
 def read_xml_data(f_name):
-    return None  # todo
+    try:
+        data = [{
+            K_DATE: row.attrib['Date'],
+            K_FROM: row[2][0].text,
+            K_TO: row[2][1].text,
+            K_NARRATIVE: row[0].text,
+            K_AMOUNT: row[1].text
+        } for row in ET.parse(f_name).getroot()]
+    except:
+        return None
+    return data
 
 
 if __name__ == "__main__":
