@@ -27,11 +27,42 @@ def main():
         people[r_from][1].append((r_date, r_to, r_narrative, r_amount))
 
     # pprint(people)
-    console_prompt()
+    while True:
+        console_prompt(people)
 
 
-def console_prompt():
-    pass
+def console_prompt(people):
+    print("Select an option:\n (1) List all\n (2) List account\n (0) Exit")
+    option = int(input("> "))
+
+    if option == 0:
+        exit()
+    elif option == 1:
+        list_all(people)
+    elif option == 2:
+        name = str(input("Enter a name: "))
+        list_account(people, name)
+        pass
+
+    print()
+
+
+def list_all(people):
+    for name, data in people.items():
+        print("{0}: £{1}".format(name, data[0]))
+
+
+def list_account(people, name):
+    if name in people:
+        data = people[name]
+        print("Transactions for '{0}'".format(name))
+
+        for tran in data[1]:
+            print("  £{0} to {1} on {2}: '{3}'".format(
+                tran[3], tran[1], tran[0], tran[2]))
+
+    else:
+        print("Name '{0}' not found".format(name))
 
 
 if __name__ == "__main__":
