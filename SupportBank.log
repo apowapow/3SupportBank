@@ -1,1 +1,4 @@
 INFO:root:main
+INFO:root:Loading '2015.csv'
+INFO:root:File '2015.csv' entry 26: invalid amount (skipping...)
+INFO:root:File '2015.csv' entry 50: invalid date (skipping...)

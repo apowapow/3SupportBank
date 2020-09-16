@@ -6,6 +6,7 @@ OPTION_EXIT = 0
 OPTION_LIST_ALL = 1
 OPTION_LIST_ACCOUNT = 2
 OPTION_IMPORT_TRANSACTIONS = 3
+OPTION_EXPORT_TRANSACTIONS = 4
 
 
 def main():
@@ -17,7 +18,10 @@ def main():
     logging.info('main')
 
     while True:
-        console_prompt(manager)
+        try:
+            console_prompt(manager)
+        except Exception as e:
+            logging.error(str(e))
 
 
 def console_prompt(manager: TransactionManager):
@@ -25,9 +29,10 @@ def console_prompt(manager: TransactionManager):
     print("  (1) List all")
     print("  (2) List account")
     print("  (3) Import transactions")
+    print("  (4) Export transactions")
     print("  (0) Exit")
 
-    option = get_int_input("> ", OPTION_EXIT, OPTION_IMPORT_TRANSACTIONS)
+    option = get_int_input("> ", OPTION_EXIT, OPTION_EXPORT_TRANSACTIONS)
 
     if option == OPTION_EXIT:
         exit()
@@ -41,10 +46,19 @@ def console_prompt(manager: TransactionManager):
 
     elif option == OPTION_IMPORT_TRANSACTIONS:
         file_name = get_str_input("Enter a file name: ")
-        source = TransactionFactory.create(file_name)
+        source = TransactionSourceFactory.create(file_name)
 
         if source is not None:
             source.import_data(manager)
+        else:
+            print("File '{0}' is an unsupported type".format(file_name))
+
+    elif option == OPTION_EXPORT_TRANSACTIONS:
+        file_name = get_str_input("Enter a file name: ")
+        exporter = TransactionExportFactory.create(file_name)
+
+        if exporter is not None:
+            exporter.export_data(manager, file_name)
         else:
             print("File '{0}' is an unsupported type".format(file_name))
 

@@ -6,6 +6,7 @@ import csv
 import json
 import xml.etree.ElementTree as ET
 from operator import itemgetter
+import logging
 
 
 KEY_TOTAL = "total"
@@ -44,6 +45,7 @@ class TransactionManager:
                     tran[KEY_NARRATIVE]))
         else:
             print("Name '{0}' not found".format(name))
+            raise Exception("Name '{0}' not found".format(name))
 
     def add_transaction(self, user_from: str, user_to: str, amount: Decimal, date: datetime, narrative: str):
         self._maybe_create_user(user_from)
@@ -66,17 +68,50 @@ class TransactionManager:
 
 class AbstractTransactionSource(ABC):
 
+    _IMPORT_DATA_EXCEPTION = "File '{0}' entry {1}: invalid {2} (skipping...)"
+
     def __init__(self, file_name: str):
         self._file_name = file_name
 
     def import_data(self, manager: TransactionManager):
-        for row in self._read_file():
-            manager.add_transaction(
-                self._get_from(row),
-                self._get_to(row),
-                self._get_amount(row),
-                self._get_date(row),
-                self._get_narrative(row))
+        logging.info("Loading '{0}'".format(self._file_name))
+        for i, row in enumerate(self._read_file()):
+            try:
+                r_from = self._get_from(row)
+            except:
+                logging.info(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "from"))
+                print(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "from"))
+                continue
+
+            try:
+                r_to = self._get_to(row)
+            except:
+                logging.info(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "to"))
+                print(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "to"))
+                continue
+
+            try:
+                r_amount = self._get_amount(row)
+            except:
+                logging.info(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "amount"))
+                print(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "amount"))
+                continue
+
+            try:
+                r_date = self._get_date(row)
+            except:
+                logging.info(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "date"))
+                print(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "date"))
+                continue
+
+            try:
+                r_narrative = self._get_narrative(row)
+            except:
+                logging.info(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "narrative"))
+                print(self._IMPORT_DATA_EXCEPTION.format(self._file_name, i, "narrative"))
+                continue
+
+            manager.add_transaction(r_from, r_to, r_amount, r_date, r_narrative)
 
     @abstractmethod
     def _read_file(self) -> List[Dict]:
@@ -195,7 +230,7 @@ class XMLTransactionSource(AbstractTransactionSource):
         return row[KEY_NARRATIVE]
 
 
-class TransactionFactory:
+class TransactionSourceFactory:
 
     @staticmethod
     def create(file_name: str):
@@ -208,4 +243,45 @@ class TransactionFactory:
 
             elif file_name.endswith(".xml"):
                 return XMLTransactionSource(file_name)
+        return None
+
+
+class AbstractTransactionExportStrategy(ABC):
+
+    @abstractmethod
+    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+        """"""
+
+
+class CSVExportStrategy(AbstractTransactionExportStrategy):
+
+    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+        return False
+
+
+class JSONExportStrategy(AbstractTransactionExportStrategy):
+
+    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+        return False
+
+
+class XMLExportStrategy(AbstractTransactionExportStrategy):
+
+    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+        return False
+
+
+class TransactionExportFactory:
+
+    @staticmethod
+    def create(file_name: str):
+        if len(file_name) > 0:
+            if file_name.endswith(".csv"):
+                return CSVExportStrategy()
+
+            elif file_name.endswith(".json"):
+                return JSONExportStrategy()
+
+            elif file_name.endswith(".xml"):
+                return XMLExportStrategy()
         return None
