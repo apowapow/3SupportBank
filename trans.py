@@ -5,14 +5,16 @@ from decimal import *
 import csv
 import json
 import xml.etree.ElementTree as ET
+from xml.dom.minidom import parseString
 from operator import itemgetter
 import logging
 import os
-from pprint import pprint
+from dicttoxml import dicttoxml
 
 
 KEY_TOTAL = "total"
 KEY_TRANSACTIONS = "transactions"
+KEY_USER = "user"
 KEY_DATE = "date"
 KEY_FROM = "fromAccount"
 KEY_TO = "toAccount"
@@ -311,7 +313,32 @@ class JSONExportStrategy(AbstractTransactionExportStrategy):
 class XMLExportStrategy(AbstractTransactionExportStrategy):
 
     def export_data(self, manager: TransactionManager, file_name: str):
-        return False
+        users = manager.get_users()
+        dict_xml = {KEY_USER: []}
+
+        if os.path.exists(file_name):
+            os.remove(file_name)
+
+        for name in sorted(users):
+            dict_user = {
+                KEY_FROM: name,
+                KEY_TOTAL: str(users[name][KEY_TOTAL]),
+                KEY_TRANSACTIONS: []
+            }
+
+            for trans in users[name][KEY_TRANSACTIONS]:
+                dict_user[KEY_TRANSACTIONS].append({
+                    KEY_TO: trans[KEY_TO],
+                    KEY_AMOUNT: str(trans[KEY_AMOUNT]),
+                    KEY_DATE: trans[KEY_DATE].strftime(DATE_STR_FORMAT),
+                    KEY_NARRATIVE: trans[KEY_NARRATIVE]
+                })
+
+            dict_xml[KEY_USER].append(dict_user)
+
+        with open(file_name, 'w') as file:
+            xml = dicttoxml(dict_xml)
+            file.write(parseString(xml).toprettyxml())
 
 
 class TransactionExportFactory:
