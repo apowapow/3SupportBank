@@ -7,6 +7,7 @@ import json
 import xml.etree.ElementTree as ET
 from operator import itemgetter
 import logging
+import os
 from pprint import pprint
 
 
@@ -264,23 +265,47 @@ class CSVExportStrategy(AbstractTransactionExportStrategy):
     def export_data(self, manager: TransactionManager, file_name: str):
         users = manager.get_users()
 
+        if os.path.exists(file_name):
+            os.remove(file_name)
+
         with open(file_name, "w", newline="") as f:
             w = csv.DictWriter(
                 f=f, fieldnames=[KEY_FROM, KEY_TO, KEY_AMOUNT, KEY_DATE, KEY_NARRATIVE])
 
             w.writeheader()
 
-            for name, data in users.items():
-                for trans in data[KEY_TRANSACTIONS]:
+            for name in sorted(users):
+                for trans in users[name][KEY_TRANSACTIONS]:
                     write_dict = {**{KEY_FROM: name}, **trans}
                     write_dict[KEY_DATE] = write_dict[KEY_DATE].strftime(DATE_STR_FORMAT)
+                    write_dict[KEY_AMOUNT] = str(write_dict[KEY_AMOUNT])
                     w.writerow(write_dict)
 
 
 class JSONExportStrategy(AbstractTransactionExportStrategy):
 
     def export_data(self, manager: TransactionManager, file_name: str):
-        return False
+        users = manager.get_users()
+        dict_json = {}
+
+        if os.path.exists(file_name):
+            os.remove(file_name)
+
+        for name in sorted(users):
+            dict_json[name] = {}
+            dict_json[name][KEY_TOTAL] = str(users[name][KEY_TOTAL])
+            dict_json[name][KEY_TRANSACTIONS] = users[name][KEY_TRANSACTIONS]
+
+            for i, trans in enumerate(dict_json[name][KEY_TRANSACTIONS]):
+                dict_json[name][KEY_TRANSACTIONS][i][KEY_DATE] = \
+                    dict_json[name][KEY_TRANSACTIONS][i][KEY_DATE].strftime(DATE_STR_FORMAT)
+
+                dict_json[name][KEY_TRANSACTIONS][i][KEY_AMOUNT] = \
+                    str(dict_json[name][KEY_TRANSACTIONS][i][KEY_AMOUNT])
+
+        with open(file_name, 'w') as file:
+            json_dump = json.dumps(dict_json, indent=2)
+            file.write(json_dump)
 
 
 class XMLExportStrategy(AbstractTransactionExportStrategy):
