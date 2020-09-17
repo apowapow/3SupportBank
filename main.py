@@ -21,6 +21,7 @@ def main():
         try:
             console_prompt(manager)
         except Exception as e:
+            print("Error: {0}".format(str(e)))
             logging.error(str(e))
 
 
@@ -45,7 +46,7 @@ def console_prompt(manager: TransactionManager):
             get_str_input("Enter a name: "))
 
     elif option == OPTION_IMPORT_TRANSACTIONS:
-        file_name = get_str_input("Enter a file name: ")
+        file_name = get_str_input("Enter import file name: ")
         source = TransactionSourceFactory.create(file_name)
 
         if source is not None:
@@ -54,10 +55,11 @@ def console_prompt(manager: TransactionManager):
             print("File '{0}' is an unsupported type".format(file_name))
 
     elif option == OPTION_EXPORT_TRANSACTIONS:
-        file_name = get_str_input("Enter a file name: ")
+        file_name = get_str_input("Enter export file name: ")
         exporter = TransactionExportFactory.create(file_name)
 
         if exporter is not None:
+            logging.info("Exporter: {0}".format(exporter.__class__.__name__))
             exporter.export_data(manager, file_name)
         else:
             print("File '{0}' is an unsupported type".format(file_name))

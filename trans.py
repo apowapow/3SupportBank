@@ -7,6 +7,7 @@ import json
 import xml.etree.ElementTree as ET
 from operator import itemgetter
 import logging
+from pprint import pprint
 
 
 KEY_TOTAL = "total"
@@ -17,11 +18,16 @@ KEY_TO = "toAccount"
 KEY_NARRATIVE = "narrative"
 KEY_AMOUNT = "amount"
 
+DATE_STR_FORMAT = "%Y-%m-%d"
+
 
 class TransactionManager:
 
     def __init__(self):
         self._users = {}
+
+    def get_users(self):
+        return self._users
 
     def list_all(self):
         totals = [(name, data[KEY_TOTAL]) for name, data in self._users.items()]
@@ -249,25 +255,37 @@ class TransactionSourceFactory:
 class AbstractTransactionExportStrategy(ABC):
 
     @abstractmethod
-    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+    def export_data(self, manager: TransactionManager, file_name: str):
         """"""
 
 
 class CSVExportStrategy(AbstractTransactionExportStrategy):
 
-    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
-        return False
+    def export_data(self, manager: TransactionManager, file_name: str):
+        users = manager.get_users()
+
+        with open(file_name, "w", newline="") as f:
+            w = csv.DictWriter(
+                f=f, fieldnames=[KEY_FROM, KEY_TO, KEY_AMOUNT, KEY_DATE, KEY_NARRATIVE])
+
+            w.writeheader()
+
+            for name, data in users.items():
+                for trans in data[KEY_TRANSACTIONS]:
+                    write_dict = {**{KEY_FROM: name}, **trans}
+                    write_dict[KEY_DATE] = write_dict[KEY_DATE].strftime(DATE_STR_FORMAT)
+                    w.writerow(write_dict)
 
 
 class JSONExportStrategy(AbstractTransactionExportStrategy):
 
-    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+    def export_data(self, manager: TransactionManager, file_name: str):
         return False
 
 
 class XMLExportStrategy(AbstractTransactionExportStrategy):
 
-    def export_data(self, manager: TransactionManager, file_name: str) -> bool:
+    def export_data(self, manager: TransactionManager, file_name: str):
         return False
 
 

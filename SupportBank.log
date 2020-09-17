@@ -1,4 +1,8 @@
 INFO:root:main
+INFO:root:Loading '2012.xml'
+INFO:root:Loading '2013.json'
+INFO:root:Loading '2014.csv'
 INFO:root:Loading '2015.csv'
 INFO:root:File '2015.csv' entry 26: invalid amount (skipping...)
 INFO:root:File '2015.csv' entry 50: invalid date (skipping...)
+INFO:root:Exporter: CSVExportStrategy
